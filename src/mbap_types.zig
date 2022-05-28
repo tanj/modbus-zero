@@ -53,10 +53,64 @@ pub const FunctionCode = enum {
             => 43,
         };
     }
+
+pub const ExceptionCode = enum(u8) {
+    illegal_function = 0x01,
+    illegal_data_address = 0x02,
+    illegal_data_value = 0x03,
+    server_device_failure = 0x04,
+    acknowledge = 0x05,
+    server_device_busy = 0x06,
+    memory_parity_error = 0x08,
+    gateway_path_unavailable = 0xa,
+    gateway_target_device_failed_to_respond = 0x0b,
+
+    fn fromByte(val: u8) ?ExceptionCode {
+        return switch (val) {
+            0x01 => ExceptionCode.illegal_function,
+            0x02 => ExceptionCode.illegal_data_address,
+            0x03 => ExceptionCode.illegal_data_value,
+            0x04 => ExceptionCode.server_device_failure,
+            0x05 => ExceptionCode.acknowledge,
+            0x06 => ExceptionCode.server_device_busy,
+            0x08 => ExceptionCode.memory_parity_error,
+            0x0a => ExceptionCode.gateway_path_unavailable,
+            0x0b => ExceptionCode.gateway_target_device_failed_to_respond,
+            else => null,
+        };
+    }
+};
+
+const ExceptionCodeTag = enum {
+    exception,
+    unknown,
+};
+
+pub const ExceptionCodeType = union(ExceptionCodeTag) {
+    exception: ExceptionCode,
+    unknown: u8,
+
+    pub fn fromByte(val: u8) ExceptionCodeType {
+        if (ExceptionCode.fromByte(val)) |ec| {
+            return ExceptionCodeType{ .exception = ec };
+        } else {
+            return ExceptionCodeType{ .unknown = val };
+        }
+    }
+};
+
 };
 
 test "FunctionCode.getCode" {
     const can = FunctionCode.canopen_general_reference;
     try testing.expect(43 == can.getCode());
     try testing.expect(3 == FunctionCode.read_holding_register.getCode());
+}
+
+test "ExceptionCodeType" {
+    const ec1 = ExceptionCodeType.fromByte(1);
+    try testing.expect(ExceptionCode.illegal_function == ec1.exception);
+
+    const ec2 = ExceptionCodeType.fromByte(7);
+    try testing.expect(7 == ec2.unknown);
 }
