@@ -22,6 +22,7 @@ pub const FunctionCode = enum {
     read_device_identification,
     encapsulate_interface_transport,
     canopen_general_reference,
+    unclassified_43,
 
     /// returns the function code byte value.
     ///
@@ -50,9 +51,36 @@ pub const FunctionCode = enum {
             FunctionCode.read_device_identification,
             FunctionCode.encapsulate_interface_transport,
             FunctionCode.canopen_general_reference,
+            FunctionCode.unclassified_43,
             => 43,
         };
     }
+
+    pub fn fromByte(val: u8) ?FunctionCode {
+        return switch (val) {
+            1 => FunctionCode.read_coils,
+            2 => FunctionCode.read_discrete_inputs,
+            3 => FunctionCode.read_holding_register,
+            4 => FunctionCode.read_input_register,
+            5 => FunctionCode.write_single_coil,
+            6 => FunctionCode.write_single_register,
+            7 => FunctionCode.read_exception_status,
+            8 => FunctionCode.diagnostic,
+            11 => FunctionCode.get_com_event_counter,
+            12 => FunctionCode.get_com_event_log,
+            15 => FunctionCode.write_multiple_coils,
+            16 => FunctionCode.write_multiple_registers,
+            17 => FunctionCode.report_server_id,
+            20 => FunctionCode.read_file_record,
+            21 => FunctionCode.write_file_record,
+            22 => FunctionCode.mask_write_register,
+            23 => FunctionCode.write_read_multiple_registers,
+            24 => FunctionCode.read_fifo_queue,
+            43 => FunctionCode.unclassified_43,
+            else => null,
+        };
+    }
+};
 
 pub const ExceptionCode = enum(u8) {
     illegal_function = 0x01,
