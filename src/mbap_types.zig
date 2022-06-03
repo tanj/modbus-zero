@@ -82,6 +82,42 @@ pub const FunctionCode = enum {
     }
 };
 
+const FunctionCodeTag = enum {
+    common,
+    public,
+    user,
+    err,
+};
+
+pub const FunctionCodeType = union(FunctionCodeTag) {
+    common: FunctionCode,
+    public: u8,
+    user: u8,
+    err: u8,
+
+    pub fn fromByte(val: u8) FunctionCodeType {
+        if (FunctionCode.fromByte(val)) |fc| {
+            return FunctionCodeType{ .common = fc };
+        }
+        return switch (val) {
+            1...64,
+            73...99,
+            111...127,
+            => FunctionCodeType{ .public = val },
+            65...72,
+            100...110,
+            => FunctionCodeType{ .user = val },
+            else => FunctionCodeType{ .err = val },
+        };
+    }
+
+    /// Modbus Error Response function code is the function code + 0x80. This
+    /// function converts that error function code to the original function code.
+    pub fn fromError(val: u8) FunctionCodeType {
+        return FunctionCodeType.fromByte(val & 0x7f);
+    }
+};
+
 pub const ExceptionCode = enum(u8) {
     illegal_function = 0x01,
     illegal_data_address = 0x02,
@@ -127,6 +163,15 @@ pub const ExceptionCodeType = union(ExceptionCodeTag) {
     }
 };
 
+pub const Request = struct {
+    function_code: FunctionCodeType,
+    starting_address: u16,
+    quantity: u16,
+};
+
+pub const ErrorResponse = struct {
+    function_code: FunctionCodeType,
+    exception_code: ExceptionCodeType,
 };
 
 test "FunctionCode.getCode" {
@@ -141,4 +186,33 @@ test "ExceptionCodeType" {
 
     const ec2 = ExceptionCodeType.fromByte(7);
     try testing.expect(7 == ec2.unknown);
+}
+
+test "FunctionCodeType.fromByte" {
+    var fc: u8 = 0;
+    while (true) {
+        fc += 1;
+        const fct = FunctionCodeType.fromByte(fc);
+        _ = fct;
+        if (fc == 255)
+            break;
+    }
+    var fct = FunctionCodeType.fromByte(0);
+    try testing.expect(fct.err == 0);
+    fct = FunctionCodeType.fromByte(3);
+    try testing.expect(fct.common == FunctionCode.read_holding_register);
+    fct = FunctionCodeType.fromByte(64);
+    try testing.expect(fct.public == 64);
+    fct = FunctionCodeType.fromByte(65);
+    try testing.expect(fct.user == 65);
+    fct = FunctionCodeType.fromByte(0x81);
+    try testing.expect(fct.err == 0x81);
+}
+
+test "FunctionCodeType.fromError" {
+    var fct = FunctionCodeType.fromError(0x81);
+    try testing.expect(fct.common == FunctionCode.read_coils);
+    // passing a non-error code should just parse the function code
+    fct = FunctionCodeType.fromError(1);
+    try testing.expect(fct.common == FunctionCode.read_coils);
 }
