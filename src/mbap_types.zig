@@ -1,3 +1,5 @@
+//! Modbus Application Protocol (mbap) Types
+
 const testing = @import("std").testing;
 /// Public Function Codes as defined in MODBUS Application Protocol v1.1b3
 pub const FunctionCode = enum {
@@ -161,6 +163,37 @@ pub const ExceptionCodeType = union(ExceptionCodeTag) {
             return ExceptionCodeType{ .unknown = val };
         }
     }
+};
+
+pub const ProtocolDataUnit = struct {
+    function_code: FunctionCodeType,
+    data: []u8, // max length 253 bytes
+};
+
+/// Modbus App TCP Header
+pub const TcpHeader = struct {
+    transaction_id: u16, // initialized by client, copied to server reply
+    protocol_id: u16, // initialized by client, copied to server reply
+    length: u16, // initialized by client and server
+    unit_id: u8, // initialized by client, copied to server reply
+};
+
+/// TCP Application Data Unit
+pub const TcpAppDataUnit = struct {
+    header: TcpHeader,
+    pdu: ProtocolDataUnit,
+};
+
+/// Modbus App Serial Header
+pub const SerialHeader = struct {
+    unit_id: u8, // initialized by client, copied to server reply
+};
+
+/// Serial Application Data Unit
+pub const SerialAppDataUnit = struct {
+    address: u8,
+    pdu: ProtocolDataUnit,
+    checksum: u16,
 };
 
 pub const Request = struct {
