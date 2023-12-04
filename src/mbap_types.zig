@@ -1,6 +1,10 @@
 //! Modbus Application Protocol (mbap) Types
 
 const testing = @import("std").testing;
+
+/// MODBUS stardard declares all addresses and data use big-Endian format
+pub const ModbusEndian = @import("std").builtin.Endian.big;
+
 /// Public Function Codes as defined in MODBUS Application Protocol v1.1b3
 pub const FunctionCode = enum {
     read_discrete_inputs,
@@ -166,8 +170,8 @@ pub const ExceptionCodeType = union(ExceptionCodeTag) {
 };
 
 pub const ProtocolDataUnit = struct {
-    function_code: FunctionCodeType,
-    data: []u8, // max length 253 bytes
+    function_code_type: FunctionCodeType,
+    data: []const u8, // max length 253 bytes
 };
 
 /// Modbus App TCP Header
@@ -197,7 +201,7 @@ pub const SerialAppDataUnit = struct {
 };
 
 pub const Request = struct {
-    function_code: FunctionCodeType,
+    function_code_type: FunctionCodeType,
     starting_address: u16,
     quantity: u16,
 };
@@ -248,4 +252,25 @@ test "FunctionCodeType.fromError" {
     // passing a non-error code should just parse the function code
     fct = FunctionCodeType.fromError(1);
     try testing.expect(fct.common == FunctionCode.read_coils);
+}
+
+test "Type Sizes" {
+    const std = @import("std");
+    const slice = struct {
+        s: []u8,
+    };
+    std.debug.print("slice: {}\n", .{@sizeOf(slice)});
+    // std.debug.print("ModbusEndian: {}\n", .{@sizeOf(ModbusEndian)});
+    std.debug.print("usize: {}\n", .{@sizeOf(usize)});
+    std.debug.print("FunctionCode: {}\n", .{@sizeOf(FunctionCode)});
+    std.debug.print("FunctionCodeType: {}\n", .{@sizeOf(FunctionCodeType)});
+    std.debug.print("ExceptionCode: {}\n", .{@sizeOf(ExceptionCode)});
+    std.debug.print("ExceptionCodeType: {}\n", .{@sizeOf(ExceptionCodeType)});
+    std.debug.print("ProtocolDataUnit: {}\n", .{@sizeOf(ProtocolDataUnit)});
+    std.debug.print("TcpHeader: {}\n", .{@sizeOf(TcpHeader)});
+    std.debug.print("TcpAppDataUnit: {}\n", .{@sizeOf(TcpAppDataUnit)});
+    std.debug.print("SerialHeader: {}\n", .{@sizeOf(SerialHeader)});
+    std.debug.print("SerialAppDataUnit: {}\n", .{@sizeOf(SerialAppDataUnit)});
+    std.debug.print("Request: {}\n", .{@sizeOf(Request)});
+    std.debug.print("ErrorResponse: {}\n", .{@sizeOf(ErrorResponse)});
 }

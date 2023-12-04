@@ -8,6 +8,7 @@ const Test = struct {
 const tests: []const Test = &.{
     .{ .name = "main", .path = "src/main.zig" },
     .{ .name = "modbus-app-types", .path = "src/mbap_types.zig" },
+    .{ .name = "common", .path = "src/common.zig" },
 };
 
 pub fn build(b: *std.build.Builder) void {
